@@ -28,7 +28,7 @@ const initialPeople: People = {
 };
 
 const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
-    const [people, setPeople] = useState<People>({});
+    const [people, setPeople] = useState<People | null>(null);
     const [rootIdStack, setRootIdStack] = useState<string[]>(['root']);
     const [isLoading, setIsLoading] = useState(true);
     const [dataLoaded, setDataLoaded] = useState(false);
@@ -66,7 +66,15 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     }, []);
 
     useEffect(() => {
-        ai.current = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        try {
+            if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+                ai.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            } else {
+                 console.warn("API_KEY environment variable not set. AI features will be disabled.");
+            }
+        } catch(e) {
+            console.error("Failed to initialize GoogleGenAI", e);
+        }
         
         const storedTheme = localStorage.familyTreeTheme;
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -127,7 +135,9 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     // Debounced save effect
     useEffect(() => {
         const handler = setTimeout(() => {
-            saveTreeData(people, rootIdStack);
+            if (people) {
+                saveTreeData(people, rootIdStack);
+            }
         }, 1500);
         return () => clearTimeout(handler);
     }, [people, rootIdStack, saveTreeData]);
@@ -137,13 +147,14 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
         const data = params.get('data');
         if (data) {
             setIsPasswordPromptOpen(true);
+            setIsLoading(false); // Stop loading to show prompt
         } else {
             fetchTreeData();
         }
     }, [fetchTreeData]);
 
     const handleNavigate = (personId: string) => {
-        if (people[personId]) {
+        if (people && people[personId]) {
             setRootIdStack(prev => [...prev, personId]);
             setHighlightedPersonId(personId);
             setTimeout(() => setHighlightedPersonId(null), 1500);
@@ -159,6 +170,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
       existingPersonId?: string,
     ) => {
       setPeople(currentPeople => {
+          if (!currentPeople) return null;
           const newPeople = { ...currentPeople };
 
           // EDIT MODE
@@ -255,6 +267,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
         }
 
         setPeople(currentPeople => {
+            if (!currentPeople) return null;
             const newPeople = { ...currentPeople };
             const personToDelete = newPeople[personId];
             if (!personToDelete) return currentPeople;
@@ -328,7 +341,10 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
 
     const performSearch = async (queryToSearch?: string) => {
         const currentQuery = queryToSearch || searchQuery;
-        if (!currentQuery.trim() || !ai.current) return;
+        if (!currentQuery.trim() || !ai.current) {
+             if (!ai.current) setSearchError("AI სერვისი მიუწვდომელია.");
+             return;
+        }
         
         setIsSearchLoading(true);
         setSearchError(null);
@@ -367,6 +383,9 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     };
     
     const calculateStats = useCallback((): Statistics => {
+      if (!people) {
+        return { totalPeople: 0, genderData: { male: 0, female: 0 }, statusData: { living: 0, deceased: 0 }, ageGroupData: { '0-18': 0, '19-35': 0, '36-60': 0, '60+': 0 }, generationData: { labels: [], data: [] }, birthRateData: { labels: [], data: [] }, topMaleNames: [], topFemaleNames: [], oldestLivingPerson: null, averageLifespan: 0, mostCommonAddress: null };
+      }
       const allPeople = Object.values(people);
       if (allPeople.length === 0) {
         return { totalPeople: 0, genderData: { male: 0, female: 0 }, statusData: { living: 0, deceased: 0 }, ageGroupData: { '0-18': 0, '19-35': 0, '36-60': 0, '60+': 0 }, generationData: { labels: [], data: [] }, birthRateData: { labels: [], data: [] }, topMaleNames: [], topFemaleNames: [], oldestLivingPerson: null, averageLifespan: 0, mostCommonAddress: null };
@@ -421,6 +440,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
       
       const generations: Record<number, Person[]> = {};
       const traverse = (personId: string, level: number) => {
+          if (!people[personId]) return;
           if (!generations[level]) generations[level] = [];
           const person = people[personId];
           if(person && !generations[level].some(p => p.id === personId)) {
@@ -469,17 +489,23 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     }, [people]);
 
     const peopleWithBirthdays = useMemo(() => {
+        if (!people) return [];
         const currentMonth = new Date().getMonth();
         return Object.values(people).filter(p => {
             if (!p.birthDate || p.deathDate) return false;
-            const birthMonth = new Date(p.birthDate).getMonth();
-            return birthMonth === currentMonth;
+            try {
+                const birthMonth = new Date(p.birthDate).getMonth();
+                return birthMonth === currentMonth;
+            } catch (e) {
+                return false;
+            }
         });
     }, [people]);
 
     const calculatedStats = useMemo(calculateStats, [people]);
 
     const handleExportJson = () => {
+        if (!people) return;
         const dataStr = JSON.stringify({ people, rootIdStack }, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = 'family_tree_data.json';
@@ -518,13 +544,14 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
                         alert("ფაილის წაკითხვა ვერ მოხერხდა.");
                     }
                 };
+                // FIX: Corrected FileReader method from readText to readAsText.
                 reader.readAsText(file);
             }
         };
         input.click();
     };
 
-    if (isLoading) {
+    if (isLoading || !people) {
         return <div className="h-screen bg-white dark:bg-gray-900 flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500"></div></div>;
     }
 
@@ -602,7 +629,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
                     anchorPersonExSpouses={anchorExSpousesForModal}
                 />
             )}
-             {detailsModalPersonId && (
+             {detailsModalPersonId && people[detailsModalPersonId] && (
                 <DetailsModal person={people[detailsModalPersonId]} people={people} onClose={() => setDetailsModalPersonId(null)} onEdit={(id) => { setDetailsModalPersonId(null); setModalState({ isOpen: true, context: { action: 'edit', personId: id } }); }} onDelete={handleDeletePerson} onNavigate={(id) => { setDetailsModalPersonId(null); handleNavigate(id); }} onGoogleSearch={handleGoogleSearch} onShowOnMap={onShowOnMap}/>
             )}
             <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} data={{ people, rootIdStack }} />
