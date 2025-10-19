@@ -1,0 +1,20 @@
+{
+  "short_name": "გენი",
+  "name": "გენი",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/fyGRn3Dd/geni.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://i.postimg.cc/fyGRn3Dd/geni.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#111827",
+  "background_color": "#111827"
+}
