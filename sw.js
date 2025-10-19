@@ -55,20 +55,30 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Handle API calls with stale-while-revalidate strategy.
+  // Handle API calls
   if (url.pathname.startsWith('/.netlify/functions/')) {
+    // For non-GET requests (e.g., POST to save data), always fetch from the network.
+    // Do not attempt to cache POST, PUT, DELETE, etc.
+    if (event.request.method !== 'GET') {
+      event.respondWith(fetch(event.request));
+      return;
+    }
+
+    // For GET requests, use a stale-while-revalidate strategy.
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache => {
         return cache.match(event.request).then(cachedResponse => {
           const fetchPromise = fetch(event.request).then(networkResponse => {
+            // If the fetch is successful, update the cache.
             cache.put(event.request, networkResponse.clone());
             return networkResponse;
           }).catch(err => {
             console.error('[SW] Fetch failed:', err);
-            // The request failed, but we may have served a cached response, which is fine.
+            // If fetch fails, the cached response (if it exists) will be used.
+            // If there's no cached response, the promise rejection will bubble up.
           });
 
-          // Return cached response immediately if available, otherwise wait for fetch.
+          // Return the cached response immediately if available, otherwise wait for the network response.
           return cachedResponse || fetchPromise;
         });
       })
