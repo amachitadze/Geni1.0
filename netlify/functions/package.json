@@ -1,9 +1,1 @@
-{
-  "name": "family-tree-netlify-functions",
-  "version": "1.0.0",
-  "description": "Serverless functions for the family tree app",
-  "main": "get-tree.js",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.43.4"
-  }
-}
+{}
