@@ -1,5 +1,4 @@
-// This function requires a database (e.g., FaunaDB, MongoDB Atlas, Supabase) to persist data.
-// See comments in get-tree.js for more details.
+const { createClient } = require('@supabase/supabase-js');
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -14,38 +13,29 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ message: 'Unauthorized' }),
     };
   }
+  
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Supabase URL or Key not configured.' }),
+      };
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     const treeData = JSON.parse(event.body);
 
-    // --- DATABASE INTEGRATION EXAMPLE (e.g., FaunaDB) ---
-    //
-    // 1. See get-tree.js for client setup.
-    // 2. Check if a document for the user already exists.
-    //    const userDocExists = await client.query(q.Exists(q.Match(q.Index('trees_by_userId'), user.sub)));
-    //
-    // 3. If it exists, update it. If not, create a new one.
-    //    if (userDocExists) {
-    //      await client.query(
-    //        q.Update(
-    //          q.Select("ref", q.Get(q.Match(q.Index('trees_by_userId'), user.sub))),
-    //          { data: { tree: treeData } }
-    //        )
-    //      );
-    //    } else {
-    //      await client.query(
-    //        q.Create(q.Collection('trees'), {
-    //          data: { userId: user.sub, tree: treeData },
-    //        })
-    //      );
-    //    }
-    //
-    // --------------------------------------------------------
+    const { error } = await supabase
+      .from('trees')
+      .upsert({ user_id: user.sub, tree_data: treeData });
 
-    // MOCK IMPLEMENTATION:
-    // In a real app, you would save `treeData` to your database here,
-    // associated with the user's ID (`user.sub`).
-    console.log(`Simulating save for user ${user.sub}`);
+    if (error) {
+      throw error;
+    }
 
     return {
       statusCode: 200,
