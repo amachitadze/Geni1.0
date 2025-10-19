@@ -56,7 +56,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Handle API calls with stale-while-revalidate strategy.
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/.netlify/functions/')) {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache => {
         return cache.match(event.request).then(cachedResponse => {

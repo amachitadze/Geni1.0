@@ -329,7 +329,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     if (!currentUser) return;
     setIsDataLoading(true);
     try {
-        const response = await fetch('/api/get-tree', {
+        const response = await fetch('/.netlify/functions/get-tree', {
             headers: { Authorization: `Bearer ${currentUser.token.access_token}` },
         });
         if (!response.ok) {
@@ -374,7 +374,7 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
   const saveTreeData = useDebouncedCallback(async (currentUser: any, currentPeople: People, currentRootIdStack: string[]) => {
       if (!currentUser || Object.keys(currentPeople).length === 0) return;
       try {
-          await fetch('/api/save-tree', {
+          await fetch('/.netlify/functions/save-tree', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
