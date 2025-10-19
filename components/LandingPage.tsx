@@ -42,17 +42,25 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center min-h-screen p-6">
-        <div className="max-w-3xl">
-          <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-600 pb-2">
+      <section className="relative flex flex-col items-center justify-center text-center min-h-screen p-6 overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center z-0" 
+          style={{ backgroundImage: "url('https://i.postimg.cc/DZBW1Cbf/Geni-cover.png')" }}
+        ></div>
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gray-900/60 dark:bg-black/70 z-0"></div>
+
+        <div className="relative z-10 max-w-3xl">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 pb-2">
             გენეალოგიური ხე
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-300">
+          <p className="mt-4 text-base sm:text-lg md:text-xl text-gray-200 dark:text-gray-300">
             აღმოაჩინეთ, შექმენით და ვიზუალურად გამოსახეთ თქვენი ოჯახის ისტორია. დაიწყეთ თქვენი საგვარეულო ხის აწყობა დღესვე.
           </p>
           <button
             onClick={handleLogin}
-            className="mt-10 px-8 py-4 text-lg font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-transform transform hover:scale-105"
+            className="mt-10 px-8 py-4 text-lg font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-transform transform hover:scale-105 shadow-lg"
           >
             შესვლა / რეგისტრაცია
           </button>
@@ -98,8 +106,10 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-gray-500 dark:text-gray-400">
-        <p>&copy; {new Date().getFullYear()} გენეალოგიური ხე. ყველა უფლება დაცულია.</p>
+      <footer className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+        <p>
+            &copy; {new Date().getFullYear()} გენეალოგიური ხე. ყველა უფლება დაცულია. | შექმნილია <a href="https://bit.ly/av-ma" target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 hover:underline">avma</a>-ს მიერ.
+        </p>
       </footer>
     </div>
   );

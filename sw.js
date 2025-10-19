@@ -32,6 +32,7 @@ const urlsToCache = [
   'https://aistudiocdn.com/react@^19.1.1',
   'https://aistudiocdn.com/react-dom@^19.1.1/',
   'https://i.postimg.cc/fyGRn3Dd/geni.png',
+  'https://i.postimg.cc/DZBW1Cbf/Geni-cover.png',
   'https://avatar.iran.liara.run/public/boy?username=Founder',
   'https://identity.netlify.com/v1/netlify-identity-widget.js'
 ];
@@ -57,31 +58,30 @@ self.addEventListener('fetch', event => {
 
   // Handle API calls
   if (url.pathname.startsWith('/.netlify/functions/')) {
-    // For non-GET requests (e.g., POST to save data), always fetch from the network.
-    // Do not attempt to cache POST, PUT, DELETE, etc.
+    // For non-GET requests (like POST), always go to the network. Do not cache.
     if (event.request.method !== 'GET') {
       event.respondWith(fetch(event.request));
       return;
     }
 
-    // For GET requests, use a stale-while-revalidate strategy.
+    // For GET requests, use a network-first strategy.
     event.respondWith(
-      caches.open(DATA_CACHE_NAME).then(cache => {
-        return cache.match(event.request).then(cachedResponse => {
-          const fetchPromise = fetch(event.request).then(networkResponse => {
-            // If the fetch is successful, update the cache.
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          }).catch(err => {
-            console.error('[SW] Fetch failed:', err);
-            // If fetch fails, the cached response (if it exists) will be used.
-            // If there's no cached response, the promise rejection will bubble up.
+      fetch(event.request)
+        .then(networkResponse => {
+          // If successful, clone the response and update the cache.
+          const responseToCache = networkResponse.clone();
+          caches.open(DATA_CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
           });
-
-          // Return the cached response immediately if available, otherwise wait for the network response.
-          return cachedResponse || fetchPromise;
-        });
-      })
+          return networkResponse;
+        })
+        .catch(() => {
+          // If the network fails, try to serve the response from the cache.
+          console.log('[SW] Network failed, trying cache for:', event.request.url);
+          return caches.match(event.request).then(response => {
+            return response || Promise.reject('no-match');
+          });
+        })
     );
     return;
   }
