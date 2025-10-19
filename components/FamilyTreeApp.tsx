@@ -23,7 +23,7 @@ declare global {
 }
 
 const SearchIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
 );
@@ -33,12 +33,12 @@ const BackIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 const HomeIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
 );
 const SettingsIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
@@ -49,7 +49,7 @@ const ExportIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 const CenterIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
     </svg>
 );
@@ -108,6 +108,11 @@ const DocumentTextIcon: React.FC<{ className?: string }> = ({ className }) => (
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
 );
+const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+);
 
 const validatePeopleData = (data: any): { isValid: boolean; error: string | null } => {
     if (!data || typeof data.people !== 'object' || !Array.isArray(data.rootIdStack)) {
@@ -115,6 +120,11 @@ const validatePeopleData = (data: any): { isValid: boolean; error: string | null
     }
     const { people, rootIdStack } = data;
     const allIds = new Set(Object.keys(people));
+    
+    if (Object.keys(people).length > 0 && rootIdStack.length === 0) {
+        return { isValid: false, error: "ფაილი დაზიანებულია: არ არის მითითებული საწყისი წევრი (rootIdStack is empty)." };
+    }
+    
     if (rootIdStack.some(id => !allIds.has(id))) {
         return { isValid: false, error: "ფაილი დაზიანებულია: შეიცავს არასწორ კავშირს საწყის წევთან." };
     }
@@ -995,6 +1005,25 @@ const FamilyTreeApp: React.FC<{ user: any }> = ({ user }) => {
     handleCloseDetailsModal();
   };
 
+  const handleCreateFirstPerson = useCallback(() => {
+    const initialPeople: People = {
+      'root': {
+        id: 'root',
+        firstName: 'დამფუძნებელი',
+        lastName: 'გვარი',
+        gender: Gender.Male,
+        children: [],
+        parentIds: [],
+        exSpouseIds: [],
+        birthDate: '1950-01-01',
+        bio: 'ამ გენეალოგიური ხის საწყისი წერტილი.',
+        imageUrl: `https://avatar.iran.liara.run/public/boy?username=Founder`
+      },
+    };
+    setPeople(initialPeople);
+    setRootIdStack(['root']);
+  }, []);
+
   const anchorPerson = modalState.context?.action === 'add' ? people[modalState.context.personId] : null;
   const anchorSpouse = anchorPerson?.spouseId ? people[anchorPerson.spouseId] : null;
   const personToEdit = modalState.context?.action === 'edit' ? people[modalState.context.personId] : null;
@@ -1356,7 +1385,14 @@ const peopleWithBirthdays = useMemo(() => {
         ) : (
              <div className="flex-grow flex flex-col items-center justify-center text-center p-4">
                 <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">გენეალოგიური ხე ცარიელია</h2>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">დასაწყებად, დაამატეთ პირველი პიროვნება ან მოახდინეთ მონაცემების იმპორტი პარამეტრებიდან.</p>
+                <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-md">დასაწყებად, დაამატეთ პირველი პიროვნება, რათა შექმნათ ხის საწყისი წერტილი, ან მოახდინეთ მონაცემების იმპორტი პარამეტრებიდან.</p>
+                <button
+                  onClick={handleCreateFirstPerson}
+                  className="mt-6 px-6 py-3 rounded-lg bg-purple-600 text-white font-semibold flex items-center gap-2 hover:bg-purple-700 transition-colors transform hover:scale-105"
+                >
+                    <PlusIcon className="w-5 h-5"/>
+                    პირველი პიროვნების დამატება
+                </button>
              </div>
         )}
          <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
